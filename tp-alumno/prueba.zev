@@ -1,0 +1,127 @@
+<Z-EVES-GUI-State version="1" index="7"><textItem history="2" location="/home/antonio/Desktop/IS2/tp/zeves.tex:1"><zed-box> [USER, GROUP] </zed-box></textItem
+><textItem history="3" location="/home/antonio/Desktop/IS2/tp/zeves.tex:2"><zed-box>PERM ::= r | w </zed-box></textItem
+><textItem history="4" location="/home/antonio/Desktop/IS2/tp/zeves.tex:3"><zed-box>ANS ::= yes | no  </zed-box></textItem
+><textItem history="5" location="/home/antonio/Desktop/IS2/tp/zeves.tex:4"><axiomatic-box><decl-part/> userGroups : USER &rarrb;&Popf;GROUP </axiomatic-box></textItem
+><textItem history="6" location="/home/antonio/Desktop/IS2/tp/zeves.tex:5"><schema-box>ACL<decl-part/> usrs: USER &rarrb;&Popf;PERM 
+grps: GROUP &rarrb;&Popf;PERM </schema-box></textItem
+><textItem history="7" location="/home/antonio/Desktop/IS2/tp/zeves.tex:6"><schema-box>ACLInit<decl-part/> ACL <ax-part/>usrs = &empty;
+grps = &empty;</schema-box></textItem
+><textItem history="8" location="/home/antonio/Desktop/IS2/tp/zeves.tex:7"><schema-box>ACLInv<decl-part/> ACL <ax-part/><word style="roman"/>dom<word/> (usrs) &subeq;<word style="roman"/>dom<word/> (userGroups) </schema-box></textItem
+><textItem history="9" location="/home/antonio/Desktop/IS2/tp/zeves.tex:8"><schema-box>AddNewUserRight<decl-part/> &Delta;ACL 
+u? : USER 
+r? : PERM 
+<ax-part/>u? &notin;<word style="roman"/>dom<word/> (usrs) 
+u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+usrs' = usrs &oplus;{u? &rtarr;{r?}}
+grps' = grps </schema-box></textItem
+><textItem history="10" location="/home/antonio/Desktop/IS2/tp/zeves.tex:9"><schema-box>AddExistingUserRight<decl-part/> &Delta;ACL 
+u? : USER 
+r? : PERM 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (usrs) 
+usrs' = usrs &oplus;{u? &rtarr;{r?}&cup;(usrs (u?))}
+grps' = grps </schema-box></textItem
+><textItem history="11" location="/home/antonio/Desktop/IS2/tp/zeves.tex:10"><schema-box>UserDoesNotExist<decl-part/> &Xi;ACL 
+u? : USER 
+<ax-part/>u? &notin;<word style="roman"/>dom<word/> (userGroups) </schema-box></textItem
+><textItem history="12" location="/home/antonio/Desktop/IS2/tp/zeves.tex:11"><zed-box> AddUserRight &eqhat;AddNewUserRight &vee;AddExistingUserRight &vee;UserDoesNotExist </zed-box></textItem
+><textItem history="13" location="/home/antonio/Desktop/IS2/tp/zeves.tex:12"><schema-box>AddNewGroupRight<decl-part/> &Delta;ACL 
+g? : GROUP 
+r? : PERM 
+<ax-part/>g? &notin;<word style="roman"/>dom<word/> (grps) 
+grps' = grps &oplus;{g? &rtarr;{r?}}
+usrs' = usrs </schema-box></textItem
+><textItem history="14" location="/home/antonio/Desktop/IS2/tp/zeves.tex:13"><schema-box>AddExistingGroupRight<decl-part/> &Delta;ACL 
+g? : GROUP 
+r? : PERM 
+<ax-part/>g? &isin;<word style="roman"/>dom<word/> (grps) 
+grps' = grps &oplus;{g? &rtarr;{r?}&cup;(grps (g?))}
+usrs' = usrs </schema-box></textItem
+><textItem history="15" location="/home/antonio/Desktop/IS2/tp/zeves.tex:14"><zed-box> AddGroupRight &eqhat;AddNewGroupRight &vee;AddExistingGroupRight </zed-box></textItem
+><textItem history="16" location="/home/antonio/Desktop/IS2/tp/zeves.tex:15"><schema-box>IsReaderUser<decl-part/> &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (usrs) 
+r &isin;usrs(u?) 
+ans! = yes </schema-box></textItem
+><textItem history="17" location="/home/antonio/Desktop/IS2/tp/zeves.tex:16"><schema-box>IsReaderGroup<decl-part/> &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+r &isin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = yes </schema-box></textItem
+><textItem history="18" location="/home/antonio/Desktop/IS2/tp/zeves.tex:17"><schema-box>IsNotReaderNotInList<decl-part/>  &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+u? &notin;<word style="roman"/>dom<word/> (usrs) 
+r &notin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = no </schema-box></textItem
+><textItem history="19" location="/home/antonio/Desktop/IS2/tp/zeves.tex:18"><schema-box>IsNotReaderInList<decl-part/>  &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+u? &isin;<word style="roman"/>dom<word/> (usrs) 
+r &notin;usrs(u?) 
+r &notin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = no </schema-box></textItem
+><textItem history="20" location="/home/antonio/Desktop/IS2/tp/zeves.tex:19"><zed-box> IsNotReader &eqhat;IsNotReaderNotInList &vee;IsNotReaderInList
+</zed-box></textItem
+><textItem history="21" location="/home/antonio/Desktop/IS2/tp/zeves.tex:20"><zed-box> IsReader &eqhat;IsReaderUser &vee;IsReaderGroup &vee;IsNotReader &vee;UserDoesNotExist </zed-box></textItem
+><textItem history="22" location="/home/antonio/Desktop/IS2/tp/zeves.tex:21"><schema-box>IsWriterUser<decl-part/> &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (usrs) 
+w &isin;usrs(u?) 
+ans! = yes </schema-box></textItem
+><textItem history="23" location="/home/antonio/Desktop/IS2/tp/zeves.tex:22"><schema-box>IsWriterGroup<decl-part/> &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+w &isin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = yes </schema-box></textItem
+><textItem history="24" location="/home/antonio/Desktop/IS2/tp/zeves.tex:23"><schema-box>IsNotWriterNotInList<decl-part/>  &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+u? &notin;<word style="roman"/>dom<word/> (usrs) 
+w &notin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = no </schema-box></textItem
+><textItem history="25" location="/home/antonio/Desktop/IS2/tp/zeves.tex:24"><schema-box>IsNotWriterInList<decl-part/>  &Xi;ACL 
+u? : USER 
+ans! : ANS 
+<ax-part/>u? &isin;<word style="roman"/>dom<word/> (userGroups) 
+u? &isin;<word style="roman"/>dom<word/> (usrs) 
+w &notin;usrs(u?) 
+w &notin;&bigcup;(<word style="roman"/>ran<word/> ((userGroups (u?)) &vltri;grps)) 
+ans! = no </schema-box></textItem
+><textItem history="26" location="/home/antonio/Desktop/IS2/tp/zeves.tex:25"><zed-box> IsNotWriter &eqhat;IsNotWriterNotInList &vee;IsNotWriterInList
+</zed-box></textItem
+><textItem history="27" location="/home/antonio/Desktop/IS2/tp/zeves.tex:26"><zed-box> IsWriter &eqhat;IsWriterUser &vee;IsWriterGroup &vee;IsNotWriter &vee;UserDoesNotExist </zed-box></textItem
+><textItem history="28" location="/home/antonio/Desktop/IS2/tp/zeves.tex:27"><theorem-def>AddUserRightPI<ax-part/> ACLInv &wedge;AddUserRight &rArr;ACLInv' </theorem-def></textItem
+><script name="AddExistingUserRight$domainCheck"><scriptItem number="2"><ztext>prove by reduce</ztext></scriptItem
+></script
+><script name="AddExistingGroupRight$domainCheck"></script
+><script name="IsNotWriterInList$domainCheck"></script
+><script name="IsWriterUser$domainCheck"></script
+><script name="IsReaderGroup$domainCheck"></script
+><script name="IsNotWriterNotInList$domainCheck"></script
+><script name="IsWriterGroup$domainCheck"></script
+><script name="IsNotReaderNotInList$domainCheck"></script
+><script name="IsNotReaderInList$domainCheck"></script
+><script name="AddUserRightPI"><scriptItem number="2"><ztext>invoke  AddUserRight</ztext></scriptItem
+><scriptItem number="3"><ztext>split  AddNewUserRight</ztext></scriptItem
+><scriptItem number="4"><ztext>cases</ztext></scriptItem
+><scriptItem number="5"><ztext>prove by reduce</ztext></scriptItem
+><scriptItem number="6"><ztext>next</ztext></scriptItem
+><scriptItem number="7"><ztext>split  AddExistingUserRight</ztext></scriptItem
+><scriptItem number="8"><ztext>cases</ztext></scriptItem
+><scriptItem number="9"><ztext>prove by reduce</ztext></scriptItem
+><scriptItem number="10"><ztext>apply  inPower</ztext></scriptItem
+><scriptItem number="11"><ztext>instantiate  e == u?</ztext></scriptItem
+><scriptItem number="12"><ztext>prove by reduce</ztext></scriptItem
+><scriptItem number="13"><ztext>next</ztext></scriptItem
+><scriptItem number="14"><ztext>prove by reduce</ztext></scriptItem
+><scriptItem number="15"><ztext>next</ztext></scriptItem
+></script
+><script name="IsReaderUser$domainCheck"></script
+></Z-EVES-GUI-State>

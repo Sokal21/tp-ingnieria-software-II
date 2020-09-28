@@ -1,0 +1,103 @@
+\begin{zed}
+[TITLE,NAME]
+\end{zed}
+
+\begin{schema}{Database}
+movies: \power TITLE \\
+director: TITLE \pfun NAME
+\end{schema}
+
+\begin{schema}{DatabaseInit}
+Database
+\where
+movies = \emptyset \\
+director = \emptyset
+\end{schema}
+
+\begin{schema}{DatabaseInv}
+Database
+\where
+movies = \dom director
+\end{schema}
+
+\begin{schema}{AddFilmOk}
+\Delta Database \\
+t?:TITLE \\
+dir?:NAME
+\where
+t? \notin movies \\
+movies' = movies \cup \{t?\} \\
+director' = director \cup \{t? \mapsto dir?\}
+\end{schema}
+
+
+\begin{schema}{TitleAlreadyExists}
+\Xi Database \\
+t?:TITLE
+\where
+t? \in movies
+\end{schema}
+
+
+
+\begin{zed}
+AddFilm \defs AddFilmOk \lor TitleAlreadyExists
+\end{zed}
+
+
+\begin{schema}{RemoveFilmOk}
+\Delta Database \\
+t?:TITLE \\
+\where
+t? \in movies \\
+movies' = movies \setminus \{t?\} \\
+director' = director \setminus \{t? \mapsto director~t?\}
+\end{schema}
+
+Caso de error:
+
+\begin{schema}{TitleDoesNotExist}
+\Xi Database \\
+t?:TITLE
+\where
+t? \notin movies
+\end{schema}
+
+\begin{zed}
+RemoveFilm \defs RemoveFilmOk \lor TitleDoesNotExist
+\end{zed}
+
+\begin{schema}{FindDirectorOk}
+\Xi Database \\
+t?:TITLE \\
+d!: NAME
+\where
+t? \in movies \\
+d! = director~t?
+\end{schema}
+
+\begin{zed}
+FindDirector \defs FindDirectorOk \lor TitleDoesNotExist
+\end{zed}
+
+\begin{schema}{SameDirector}
+\Xi Database \\
+d?:NAME \\
+films!: \power TITLE
+\where
+films! = \dom(director \rres \{d?\})
+\end{schema}
+
+\begin{theorem}{AddFilmPI}
+DatabaseInv \land AddFilm \implies DatabaseInv'
+\end{theorem}
+
+\begin{zproof}[AddFilmPI]
+invoke AddFilm;
+split AddFilmOk;
+cases;
+prove by reduce;
+next;
+prove by reduce;
+next;
+\end{zproof}

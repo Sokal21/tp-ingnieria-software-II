@@ -1,0 +1,660 @@
+\documentclass[fleqn,colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue]{eptcs}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{z-eves}
+\usepackage{framed}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{xspace}
+\usepackage{dirtree}
+\usepackage{multicol}
+
+\newcommand{\desig}[2]{\item #1 $\approx #2$}
+\newenvironment{designations}
+  {\begin{leftbar}
+    \begin{list}{}{\setlength{\labelsep}{0cm}
+                   \setlength{\labelwidth}{0cm}
+                   \setlength{\listparindent}{0cm}
+                   \setlength{\rightmargin}{\leftmargin}}}
+  {\end{list}\end{leftbar}}
+
+\newcommand{\setlog}{$\{log\}$\xspace}
+
+\def\titlerunning{}
+\def\authorrunning{A. Locascio}
+
+\title{Trabajo Práctico para Ingeniería de Software}
+\author{Antonio Locascio}
+
+\date{2018}
+
+\begin{document}
+\thispagestyle{empty}
+\maketitle
+
+
+\section{Requerimientos}
+Se describen los requerimientos para una \textit{lista de control de acceso} (ACL) para archivos.
+
+La ACL guarda los permisos sobre un archivo que poseen los distintos usuarios y grupos. Los posibles permisos son de lectura y escritura. La interfaz de la ACL debe permitir: 
+
+\begin{itemize}
+    \item Agregar un permiso a un usuario,
+    \item Agregar un permiso a un grupo,
+    \item Verificar si un usuario es lector (tanto si el usuario tiene permiso de lectura o si pertence a un grupo con este permiso),
+    \item Verificar si un usuario es escritor (tanto si el usuario tiene permiso de escritura o si pertence a un grupo con este permiso).   
+\end{itemize}
+
+El sistema provee una funci\'on que asocia usuarios a grupos.
+
+\section{Especificación}
+Para empezar, se dan las siguientes designaciones.
+
+\begin{designations}
+\desig{$u$ es un usuario}{u \in USER}
+\desig{$g$ es un grupo}{g \in GROUP}
+\desig{$r$ es un permiso}{r \in PERM}
+\desig{$ans$ es una respuesta a una consulta}{ans \in ANS}
+\desig{Conjunto de grupos a los que $u$ pertenece}{userGroups\ u}
+\desig{Permisos guardados para el usuario $u$}{usrs\ u}
+\desig{Permisos guardados para el grupo $g$}{grps\ g}
+\end{designations}
+
+Luego, se introducen los tipos que se utilizan en la especificaci\'on. 
+
+\begin{zed}
+[USER, GROUP]
+\also
+PERM ::= r | w
+\also
+ANS ::= yes | no 
+\end{zed}
+
+Adem\'as, se presenta la siguiente definici\'on axiom\'atica. Esta representa la funci\'on que asocia usuarios a grupos que est\'a disponible en el sistema. Se asume que su dominio es el conjunto de todos los usuarios del sistema. 
+
+\begin{axdef}
+userGroups : USER \pfun \power GROUP
+\end{axdef}
+
+Con lo anterior, se define el espacio de estados de la ACL junto a su estado inicial.
+
+\begin{schema}{ACL}
+usrs: USER \pfun \power PERM \\
+grps: GROUP \pfun \power PERM
+\end{schema}
+
+
+\begin{schema}{ACLInit}
+ACL
+\where
+usrs = \emptyset \\
+grps = \emptyset
+\end{schema}
+
+Como todos los usuarios registrados se encuentran en el dominio de \textit{userGroups}, debe valer el siguiente invariante.
+
+\begin{schema}{ACLInv}
+ACL
+\where
+\dom (usrs) \subseteq \dom (userGroups)
+\end{schema}
+
+A continuaci\'on se modelan las operaciones requeridas. En primer lugar se define la que permite agregar un usuario con un permiso a la ACL. Para ello, se dan esquemas para manejar si el usuaruio ya est\'a en la lista o no. Adem\'as, se agrega un esquema para modelar el posible error.
+
+\begin{schema}{AddNewUserRight}
+\Delta ACL \\
+u? : USER \\ 
+r? : PERM \\
+\where 
+u? \notin \dom (usrs) \\
+u? \in \dom (userGroups) \\
+usrs' = usrs \oplus \{u? \mapsto \{r?\}\} \\
+grps' = grps
+\end{schema}
+
+\begin{schema}{AddExistingUserRight}
+\Delta ACL \\
+u? : USER \\ 
+r? : PERM \\
+\where 
+u? \in \dom (usrs) \\
+usrs' = usrs \oplus \{u? \mapsto \{r?\} \cup (usrs (u?))\} \\
+grps' = grps
+\end{schema}
+
+\begin{schema}{UserDoesNotExist}
+\Xi ACL \\
+u? : USER \\
+\where 
+u? \notin \dom(userGroups)
+\end{schema}
+
+\begin{zed}
+AddUserRight == AddNewUserRight \lor AddExistingUserRight \lor UserDoesNotExist
+\end{zed}
+
+En segundo lugar se hace lo mismo con la operaci\'on an\'aloga para grupos.
+
+\begin{schema}{AddNewGroupRight}
+\Delta ACL \\
+g? : GROUP \\ 
+r? : PERM \\
+\where 
+g? \notin \dom (grps) \\
+grps' = grps \oplus \{g? \mapsto \{r\}?\} \\
+usrs' = usrs
+\end{schema}
+
+\begin{schema}{AddExistingGroupRight}
+\Delta ACL \\
+g? : GROUP \\ 
+r? : PERM \\
+\where 
+g? \in \dom (grps) \\
+grps' = grps \oplus \{g? \mapsto \{r?\} \cup (grps (g?))\} \\
+usrs' = usrs
+\end{schema}
+
+\begin{zed}
+AddGroupRight == AddNewGroupRight \lor AddExistingGroupRight
+\end{zed}
+
+Por \'ultimo, se modelan las operaciones que permiten determinar si un usuario es lector o escritor. 
+Es necesario contemplar los casos en que el usuario posee el permiso individualmente o pertenece a un grupo
+que lo tiene.
+
+\begin{schema}{IsReaderUser}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (usrs) \\ 
+r \in usrs(u?) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsReaderGroup}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (userGroups) \\ 
+r \in \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsNotReaderNotInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \notin \dom (usrs) \\
+r \notin \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = no
+\end{schema}
+
+\begin{schema}{IsNotReaderInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \in \dom (usrs) \\
+r \notin usrs(u?) \\
+r \notin \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = no
+\end{schema}
+
+\begin{zed}
+IsNotReader == IsNotReaderNotInList \lor IsNotReaderInList\\
+
+IsReader == IsReaderUser \lor IsReaderGroup \lor IsNotReader \lor UserDoesNotExist
+\end{zed}
+
+\begin{schema}{IsWriterUser}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (usrs) \\ 
+w \in usrs(u?) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsWriterGroup}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (userGroups) \\ 
+w \in \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsNotWriterNotInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \notin \dom (usrs) \\
+w \notin \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = no
+\end{schema}
+
+\begin{schema}{IsNotWriterInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \in \dom (usrs) \\
+w \notin usrs(u?) \\
+w \notin \bigcup \ran((userGroups (u?)) \dres grps) \\
+ans! = no
+\end{schema}
+
+\begin{zed}
+IsNotWriter == IsNotWriterNotInList \lor IsNotWriterInList\\
+
+IsWriter == IsWriterUser \lor IsWriterGroup \lor IsNotWriter \lor UserDoesNotExist
+\end{zed}
+
+
+
+\section{Simulaciones}
+
+A continuaci\'on se presentan dos simulaciones realizadas sobre el modelo \textit{\{log\}}.
+Como se utiliza el operador $\bigcup$, es necesario contar con la librer\'ia \texttt{setloglib}\footnote{Disponible en \url{http://people.dmi.unipr.it/gianfranco.rossi/SETLOG/setloglib.slog}}.
+La primera es:
+\begin{verbatim}
+ug1(F) :- F = {[antonio, {g1,g2}], [locascio, {g1}]}.
+  
+aclInit(S0)                           &
+ug1(UG)                               &
+addUserRight(S0, antonio, w, UG, S1)  &
+addUserRight(S1, locascio, r, UG, S2) &
+addGroupRight(S2, g2, r, S3)          &
+isReader(S3, antonio, R1, UG, S4)     &
+isWriter(S4, locascio, R2, UG, S5).
+\end{verbatim}
+
+En este caso, se espera que \texttt{R1} sea \textit{yes}, ya que \texttt{antonio} es lector por formar parte de \textit{g2}, y que \textit{R2} sea igual a \textit{no}. Como se puede ver a continuaci\'on, la simulaci\'on se comporta correctamente.
+
+\begin{verbatim}
+S0 = {[usrs,{}],[grps,{}]},  
+UG = {[antonio,{g1,g2}],[locascio,{g1}]},  
+S1 = {[usrs,{[antonio,{w}]}],[grps,{}]},  
+S2 = {[usrs,{[antonio,{w}],[locascio,{r}]}],[grps,{}]},  
+S3 = {[usrs,{[antonio,{w}],[locascio,{r}]}],[grps,{[g2,{r}]}]},  
+R1 = yes,  
+S4 = {[usrs,{[antonio,{w}],[locascio,{r}]}],[grps,{[g2,{r}]}]},  
+R2 = no,  
+S5 = {[usrs,{[antonio,{w}],[locascio,{r}]}],[grps,{[g2,{r}]}]}
+Constraint: set(_N5), set(_N4), dom(_N3,_N2), g2 nin _N2, set(_N1), rel(_N3), set(_N2)
+\end{verbatim}
+
+La segunda simulaci\'on es:
+\begin{verbatim}
+ug2(F) :- F = {[u1, {g1,g2}], [u2, {g1}], [u3, {}], [u4, {g3}]}.
+
+aclInit(S0)                     &
+ug2(UG)                         &
+addUserRight(S0, u1, w, UG, S1) &
+addUserRight(S1, u3, r, UG, S2) &
+addGroupRight(S2, g3, r, S3)    &
+addGroupRight(S3, g3, w, S4)    &
+addGroupRight(S4, g2, r, S5)    &
+isWriter(S5, u1, R1, UG, S6)    &
+isReader(S6, u4, R2, UG, S7).
+\end{verbatim}
+y tiene como primera respuesta:
+\begin{verbatim}
+S0 = {[usrs,{}],[grps,{}]},  
+UG = {[u1,{g1,g2}],[u2,{g1}],[u3,{}],[u4,{g3}]},  
+S1 = {[usrs,{[u1,{w}]}],[grps,{}]},  
+S2 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{}]},  
+S3 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{[g3,{r}]}]},  
+S4 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{[g3,{w}]}]},  
+S5 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{[g3,{w}],[g2,{r}]}]},  
+R1 = yes,  
+S6 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{[g3,{w}],[g2,{r}]}]},  
+R2 = no,  
+S7 = {[usrs,{[u1,{w}],[u3,{r}]}],[grps,{[g3,{w}],[g2,{r}]}]}
+Constraint: set(_N11), set(_N10), dom(_N9,_N8), g3 nin _N8, set(_N7), rel(_N9),
+set(_N8), dom(_N6,_N5), g3 nin _N5, set(_N4), rel(_N6), set(_N5), dom(_N3,_N2),
+g2 nin _N2, set(_N1), rel(_N3), set(_N2)
+\end{verbatim}
+
+
+\section{Demostraciones con \setlog}
+
+\paragraph{Primera demostración con \setlog.}
+
+En primer lugar se demuestra que $AddGroupRight$ pereserva el invariante $grps \in \_ \pfun \_$. Esto es equivalente al teorema:
+\begin{theorem}{GrpsIsPfun}
+grps \in \_ \pfun \_ \land AddBGroupRight \implies grps' \in \_ \pfun \_
+\end{theorem}
+el cual en \setlog se escribe de la siguiente forma:
+\begin{verbatim}
+S = {[usrs, Us],[grps, Gr]}                 &
+S_ = {[usrs, Us_],[grps, Gr_]}              &
+pfun(Gr)                                    &
+addGroupRight(S, G, P, S_)                  &
+npfun(Gr_).  
+\end{verbatim}
+
+\paragraph{Segunda demostración con \setlog.}
+En este caso se demuestra que $AddUserRight$ preserva el invariante $ACLInv$, es decir, que vale el siguiente teorema:
+\begin{theorem}{AddUserRightPI}
+ACLInv \land AddUserRight \implies ACLInv'
+\end{theorem}
+cuya traducci\'on a \setlog es:
+\begin{verbatim}
+S = {[usrs, Us],[grps, Gr]}                 &
+S_ = {[usrs, Us_],[grps, Gr_]}              &
+dom(Us, DUs) & dom(UserGroups, DUserGroups) &
+subset(DUs, DUserGroups)                    &
+addUserRight(S,U,P,UserGroups,S_)           &
+dom(Us_, DUs_)                              &
+nsubset(DUs, DUserGroups).
+\end{verbatim}
+
+
+
+\section{Demostración con Z/EVES}
+
+Nuevamente se prueba que $AddUserRight$ preserva el invariante $ACLInv$, pero ahora mediante Z/EVES.
+
+\begin{theorem}{AddUserRightPI}
+ACLInv \land AddUserRight \implies ACLInv'
+\end{theorem}
+
+\begin{zproof}[AddUserRightPI]
+invoke AddUserRight;
+split AddNewUserRight;
+cases;
+prove by reduce;
+next;
+split AddExistingUserRight;
+cases;
+prove by reduce;
+apply inPower;
+instantiate e == u?;
+prove by reduce;
+next;
+prove by reduce;
+next;
+\end{zproof}
+
+En el segundo caso de la prueba, cuando se agrega un permiso a un usuario existente, se debe aplicar la regla $inPower$ y luego instanciarla en $u?$ para probar que $u? \in dom(userGroups)$.
+
+\section{Casos de prueba}
+Se generan casos de prueba para la operaci\'on $AddGroupRight$. Para ello, se utilizan los siguientes comandos de Fastest:
+\begin{verbatim}
+loadspec ../tp/acl.tex
+selop AddGroupRight
+genalltt
+addtactic AddGroupRight_DNF_1 SP \notin g? \notin \dom grps
+addtactic AddGroupRight_DNF_2 SP \in g? \in \dom grps
+genalltt
+addtactic AddGroupRight_DNF_1 FT r?
+addtactic AddGroupRight_DNF_2 FT r?
+genalltt
+addtactic AddGroupRight_DNF_2 SP \cup \{ r? \} \cup grps~g?
+genalltt
+prunett
+genalltca
+\end{verbatim}
+
+En primer lugar, se aplica la t\'actica DNF, que separa la clases $AddGroup\_DNF_1$ y $AddGroup\_DNF_2$, que representan los casos en donde se aplican las operaciones $AddNewGroupRight$ y $AddExistingGroupRight$ respectivamente.
+
+Luego, se aplican las particiones est\'andar de $\notin$ y $\in$ a estas subclases, particionando cada una nuevamente en dos. Adem\'as, se utiliza la t\'actica FT en todas las clases para generar para cada una el caso en que el permiso es de lectura y el caso de escritura. 
+
+Por \'ultimo, se aplica la SP de $\cup$ en $AddGroup\_DNF_2$ con el fin de generar todas las formas posibles de $grps\ g?$.
+
+Como resultado se obtienen casos abstractos de prueba para todas las hojas menos $AddGroupRight\_FT_9$ y  $AddGroupRight\_FT_{10}$. Estas corresponden al caso en que $g? \notin dom(grps)$ ($AddNewGroupRight$) y $dom(grps) \neq \{\}$, es decir, $grps$ contiene informaci\'on sobre grupos distintos a $g?$. Para estas dos clases Fastest no logra encontrar casos abstractos en el tiempo fijado.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}{7cm}
+\dirtree{%
+.1 $AddGroupRight\_VIS$.
+.2 $AddGroupRight\_DNF_1$.
+.3 $AddGroupRight\_SP_3$.
+.4 $AddGroupRight\_FT_9$.
+.4 $AddGroupRight\_FT_{10}$.
+.3 $AddGroupRight\_SP_4$.
+.4 $AddGroupRight\_FT_{11}$.
+.4 $AddGroupRight\_FT_{12}$.
+.2 $AddGroupRight\_DNF_2$.
+.3 $AddGroupRight\_SP_1$.
+.4 $AddGroupRight\_FT_5$.
+.5 $AddGroupRight\_SP_{15}$.
+.5 $AddGroupRight\_SP_{16}$.
+.5 $AddGroupRight\_SP_{17}$.
+.5 $AddGroupRight\_SP_{19}$.
+.4 $AddGroupRight\_FT_6$.
+.5 $AddGroupRight\_SP_{23}$.
+.5 $AddGroupRight\_SP_{24}$.
+.5 $AddGroupRight\_SP_{25}$.
+.5 $AddGroupRight\_SP_{27}$.
+.3 $AddGroupRight\_SP_2$.
+.4 $AddGroupRight\_FT_7$.
+.5 $AddGroupRight\_SP_{31}$.
+.5 $AddGroupRight\_SP_{32}$.
+.5 $AddGroupRight\_SP_{33}$.
+.5 $AddGroupRight\_SP_{35}$.
+.4 $AddGroupRight\_FT_8$.
+.5 $AddGroupRight\_SP_{39}$.
+.5 $AddGroupRight\_SP_{40}$.
+.5 $AddGroupRight\_SP_{41}$.
+.5 $AddGroupRight\_SP_{43}$.
+}
+\end{minipage}
+\caption{\'Arbol de clases de prueba.}
+\end{figure}
+
+Finalmente, se muestran los casos abstractos de prueba generados.
+
+\newpage
+
+\begin{multicols}{2}
+
+\begin{schema}{AddGroupRight\_ FT\_ 9\_ TCASE}\\
+ AddGroupRight\_ FT\_ 9 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps =~\emptyset \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ FT\_ 10\_ TCASE}\\
+ AddGroupRight\_ FT\_ 10 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps =~\emptyset \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 15\_ TCASE}\\
+ AddGroupRight\_ SP\_ 15 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \emptyset ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 16\_ TCASE}\\
+ AddGroupRight\_ SP\_ 16 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ w \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 17\_ TCASE}\\
+ AddGroupRight\_ SP\_ 17 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ r , w \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 19\_ TCASE}\\
+ AddGroupRight\_ SP\_ 19 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 23\_ TCASE}\\
+ AddGroupRight\_ SP\_ 23 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \emptyset ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 24\_ TCASE}\\
+ AddGroupRight\_ SP\_ 24 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 25\_ TCASE}\\
+ AddGroupRight\_ SP\_ 25 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ r , w \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 27\_ TCASE}\\
+ AddGroupRight\_ SP\_ 27 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ w \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 31\_ TCASE}\\
+ AddGroupRight\_ SP\_ 31 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \emptyset ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 32\_ TCASE}\\
+ AddGroupRight\_ SP\_ 32 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ w \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 33\_ TCASE}\\
+ AddGroupRight\_ SP\_ 33 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ r , w \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 35\_ TCASE}\\
+ AddGroupRight\_ SP\_ 35 
+\where
+ g? = group1 \\
+ r? = r \\
+ grps = \{ ( group1 \mapsto \{ r \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 39\_ TCASE}\\
+ AddGroupRight\_ SP\_ 39 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \emptyset ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 40\_ TCASE}\\
+ AddGroupRight\_ SP\_ 40 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ r \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 41\_ TCASE}\\
+ AddGroupRight\_ SP\_ 41 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ r , w \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+
+\begin{schema}{AddGroupRight\_ SP\_ 43\_ TCASE}\\
+ AddGroupRight\_ SP\_ 43 
+\where
+ g? = group1 \\
+ r? = w \\
+ grps = \{ ( group1 \mapsto \{ w \} ) , ( group2 \mapsto \{ r \} ) \} \\
+ usrs =~\emptyset
+\end{schema}
+
+\end{multicols}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+

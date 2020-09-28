@@ -1,0 +1,311 @@
+\documentclass[%
+  fleqn,colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue]{eptcs}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{z-eves}
+\usepackage{framed}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{xspace}
+
+\newcommand{\desig}[2]{\item #1 $\approx #2$}
+\newenvironment{designations}
+  {\begin{leftbar}
+    \begin{list}{}{\setlength{\labelsep}{0cm}
+                   \setlength{\labelwidth}{0cm}
+                   \setlength{\listparindent}{0cm}
+                   \setlength{\rightmargin}{\leftmargin}}}
+  {\end{list}\end{leftbar}}
+
+\newcommand{\setlog}{$\{log\}$\xspace}
+
+\def\titlerunning{\setlog}
+\def\authorrunning{M. Cristiá}
+
+\title{Trabajo Práctico para Ingeniería de Software}
+\author{Maximiliano Cristiá}
+
+\date{2018}
+
+\begin{document}
+\thispagestyle{empty}
+\maketitle
+
+
+\section{Requerimientos}
+El sistema Agenda de Cumpleaños permite mantener un registro de los cumpleaños de los conocidos del usuario.
+
+El sistema debe permitir asociar un nombre de persona con su fecha de cumpleaños.
+
+Además debe permitir encontrar la fecha de cumpleaños de una persona dada y el nombre de todas las personas que cumplen años en una fecha dada.
+
+
+\section{Especificación}
+Comenzamos dando algunas designaciones.
+
+\begin{designations}
+\desig{$n$ es un nombre}{n \in NAME}
+\desig{$d$ es una fecha}{d \in DATE}
+\desig{$k$ es el nombre de una persona cuyo cumpleaños hay registrar}{k \in known}
+\desig{La fecha de cumpleaños de la persona $k$}{birthday~k}
+\end{designations}
+
+Entonces introducimos los siguientes tipos básicos.
+
+\begin{zed}
+[NAME,DATE]
+\end{zed}
+
+Ahora podemos definir el espacio de estados de la especificación de la siguiente forma.
+
+\begin{schema}{BirthdayBook}
+known: \power NAME \\
+birthday: NAME \pfun DATE
+\end{schema}
+
+El estado inicial de la agenda de cumpleaños es el siguiente.
+
+\begin{schema}{BirthdayBookInit}
+BirthdayBook
+\where
+known = \emptyset \\
+birthday = \emptyset
+\end{schema}
+
+El siguiente esquema describe los predicados que deberían ser invariantes de estado.
+
+\begin{schema}{BirthdayBookInv}
+BirthdayBook
+\where
+known = \dom birthday
+\end{schema}
+
+La primera operación que modelamos es cómo agregar una fecha de cumpleaños a la agenda. Como siempre modelamos primero el caso exitoso, luego los errores y finalmente integramos todo en una única expresión de esquemas.
+
+\begin{schema}{AddBirthdayOk}
+\Delta BirthdayBook \\
+name?:NAME \\
+date?:DATE
+\where
+name? \notin known \\
+known' = known \cup \{name?\} \\
+birthday' = birthday \cup \{name? \mapsto date?\}
+\end{schema}
+
+\begin{schema}{NameAlreadyExists}
+\Xi BirthdayBook \\
+name?:NAME
+\where
+name? \in known
+\end{schema}
+
+\begin{zed}
+AddBirthday == AddBirthdayOk \lor NameAlreadyExists
+\end{zed}
+
+La segunda operación a especificar corresponde a mostrar el cumpleaños de una persona dada.
+
+\begin{schema}{FindBirthdayOk}
+\Xi BirthdayBook \\
+name?:NAME \\
+date!: DATE
+\where
+name? \in known \\
+date! = birthday(name?)
+\end{schema}
+
+\begin{schema}{NotAFriend}
+\Xi BirthdayBook \\
+name?:NAME
+\where
+name? \notin known
+\end{schema}
+
+\begin{zed}
+FindBirthday == FindBirthdayOk \lor NotAFriend
+\end{zed}
+
+Finalmente tenemos una operación que nos lista los nombres de las personas cuya fecha de cumpleaños es hoy.
+
+\begin{schema}{Remind}
+\Xi BirthdayBook \\
+today?:DATE \\
+cards!: \power NAME
+\where
+cards! = \dom(birthday \rres \{today?\})
+\end{schema}
+
+
+\section{Simulaciones}
+
+La primera simulación es la siguiente:
+\begin{verbatim}
+birthdayBookInit(S0)             & addBirthday(S0,maxi,160367,S1) & 
+addBirthday(S1,'Yo',201166,S2)   & findBirthday(S2,'Yo',C,S3) &
+addBirthday(S3,'Otro',201166,S4) & remind(S4,160367,Card,S5) &
+remind(S5,201166,Card1,S6).
+\end{verbatim}
+cuya primera respuesta es la siguiente:
+\begin{verbatim}
+S0 = {[known,{}],[birthday,{}]},  
+S1 = {[known,{maxi}],[birthday,{[maxi,160367]}]},  
+S2 = {[known,{maxi,Yo}],[birthday,{[maxi,160367],[Yo,201166]}]},  
+C = 201166,  
+S3 = {[known,{maxi,Yo}],[birthday,{[maxi,160367],[Yo,201166]}]},  
+S4 = {[known,{maxi,Yo,Otro}],
+      [birthday,{[maxi,160367],[Yo,201166],[Otro,201166]}]},  
+Card = {maxi},  
+S5 = {[known,{maxi,Yo,Otro}],
+      [birthday,{[maxi,160367],[Yo,201166],[Otro,201166]}]},  
+Card1 = {Yo,Otro},  
+S6 = {[known,{maxi,Yo,Otro}],
+      [birthday,{[maxi,160367],[Yo,201166],[Otro,201166]}]}
+\end{verbatim}
+
+La segunda simulación es la siguiente:
+\begin{verbatim}
+S0 = {[known,{maxi,caro,cami,alvaro}],
+      [birthday,{[maxi,160367],[caro,201166],[cami,290697],[alvaro,110400]}]} &
+addBirthday(S0,'Yo',160367,S1) & remind(S1,160367,Card,S1).
+\end{verbatim}
+cuya primera respuesta es la siguiente:
+\begin{verbatim}
+S0 = {[known,{maxi,caro,cami,alvaro}],
+      [birthday,{[maxi,160367],[caro,201166],[cami,290697],[alvaro,110400]}]},  
+S1 = {[known,{maxi,caro,cami,alvaro,Yo}],
+      [birthday,{[maxi,160367],[caro,201166],[cami,290697],[alvaro,110400],
+                 [Yo,160367]}]},  
+Card = {maxi,Yo}
+\end{verbatim}
+
+
+\section{Demostraciones con \setlog}
+
+\paragraph{Primera demostración con \setlog.}
+
+Demuestro que $AddBirthday$ preserva el invariante $BirthdayBookInv$, o sea el siguiente teorema:
+\begin{theorem}{AddBirthdayPI}
+BirthdayBookInv \land AddBirthday \implies BirthdayBookInv'
+\end{theorem}
+el cual en \setlog se escribe de la siguiente forma:
+\begin{verbatim}
+S = {[known,K],[birthday,B]} &
+S_ = {[known,K_],[birthday,B_]} &
+dom(B,K) &
+addBirthday(S,N,C,S_) &
+ndom(B_,K_).
+\end{verbatim}
+
+\paragraph{Segunda demostración con \setlog.}
+Demuestro que $AddBirthday$ preserva el invariante $birthday \in NAME \pfun DATE$, o sea el teorema: 
+\begin{theorem}{BirthdayIsPfun}
+birthday \in NAME \pfun DATE \land AddBirthday \implies birthday' \in NAME \pfun DATE
+\end{theorem}
+el cual en \setlog se escribe de la siguiente forma:
+\begin{verbatim}
+S = {[known,K],[birthday,B]} &
+S_ = {[known,K_],[birthday,B_]} &
+dom(B,K) &
+pfun(B) &
+addBirthday(S,N,C,S_) &
+npfun(B_).
+\end{verbatim}
+donde tuve que agregar como hipótesis que el dominio de $birthday$ es igual a $known$.
+
+
+\section{Demostración con Z/EVES}
+
+% read "/home/mcristia/fceia/is/material/setlog/ejemplo-tp.tex";
+
+\begin{theorem}{AddBirthdayPI}
+BirthdayBookInv \land AddBirthday \implies BirthdayBookInv'
+\end{theorem}
+
+\begin{zproof}[AddBirthdayPI]
+invoke AddBirthday;
+split AddBirthdayOk;
+cases;
+prove by reduce;
+next;
+prove by reduce;
+next;
+\end{zproof}
+
+\section{Casos de prueba}
+El script que usé para generar casos de prueba con Fastest es el siguiente:
+\begin{verbatim}
+loadspec fastest.tex        
+selop AddBirthday
+genalltt
+addtactic AddBirthday_DNF_1 SP \cup birthday \cup \{name? \mapsto date?\}
+genalltt
+genalltca
+\end{verbatim}
+Es decir que generé casos de prueba para la operación $AddBirthday$ aplicando DNF y SP la expresión $birthday \cup \{name? \mapsto date?\}$ pero solo para particionar la clase de prueba $AddBirthday\_DNF\_1$.
+
+De esta forma Fastest generó casos de prueba para todas las clases satisfacibles. Los casos de prueba son los siguientes:
+
+\begin{schema}{AddBirthday\_ SP\_ 2\_ TCASE}\\
+ AddBirthday\_ SP\_ 2 
+\where
+ name? = NAMENameInput \\
+ known =~\emptyset \\
+ birthday =~\emptyset \\
+ date? = DATEDateInput
+\end{schema}
+
+
+\begin{schema}{AddBirthday\_ SP\_ 4\_ TCASE}\\
+ AddBirthday\_ SP\_ 4 
+\where
+ name? = NAMENameInput \\
+ known =~\emptyset \\
+ birthday =~\emptyset \\
+ date? = DATEDateInput
+\end{schema}
+
+
+\begin{schema}{AddBirthday\_ SP\_ 6\_ TCASE}\\
+ AddBirthday\_ SP\_ 6 
+\where
+ name? = NAMENameInput \\
+ known =~\emptyset \\
+ birthday = \{ ( NAMENameInput \mapsto DATEDateInput ) , ( NAME1014 \mapsto DATE1020 ) \} \\
+ date? = DATEDateInput
+\end{schema}
+
+
+\begin{schema}{AddBirthday\_ SP\_ 7\_ TCASE}\\
+ AddBirthday\_ SP\_ 7 
+\where
+ name? = NAMENameInput \\
+ known =~\emptyset \\
+ birthday = \{ ( NAMENameInput \mapsto DATEDateInput ) \} \\
+ date? = DATEDateInput
+\end{schema}
+
+
+\begin{schema}{AddBirthday\_ DNF\_ 2\_ TCASE}\\
+ AddBirthday\_ DNF\_ 2 
+\where
+ name? = NAMENameInput \\
+ known = \{ NAMENameInput \} \\
+ birthday =~\emptyset \\
+ date? = DATEDateInput
+\end{schema}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+

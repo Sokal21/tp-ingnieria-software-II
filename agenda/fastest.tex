@@ -1,0 +1,124 @@
+\begin{zed}
+[DNI, NOMBRE] \\
+DATETIME == \nat
+\end{zed}
+
+\begin{schema}{AgendaDeTurnos}
+clientes: DNI \pfun NOMBRE \\
+turnos: DATETIME \pfun DNI
+\end{schema}
+
+\begin{schema}{AgendaDeTurnosInit}
+AgendaDeTurnos
+\where
+clientes = \emptyset \\
+turnos = \emptyset
+\end{schema}
+
+\begin{schema}{AgendaDeTurnosInv}
+AgendaDeTurnos
+\where
+\dom clientes = \ran turnos
+\end{schema}
+
+\begin{schema}{AsignarTurnoPrimeraVez}
+\Delta AgendaDeTurnos \\
+nombre?:NOMBRE \\
+dni?:DNI \\
+fecha?:DATETIME \\
+ahora?:DATETIME
+\where
+dni? \notin \dom clientes \\
+fecha? \notin \dom turnos \\
+fecha? > ahora? \\
+clientes' = clientes \cup \{dni? \mapsto nombre? \} \\
+turnos' = turnos \cup \{fecha? \mapsto dni?\}
+\end{schema}
+
+\begin{schema}{AsignarTurnoCliente}
+\Delta AgendaDeTurnos \\
+dni?:DNI \\
+fecha?:DATETIME \\
+ahora?:DATETIME
+\where
+dni? \in \dom clientes \\
+fecha? \notin \dom turnos \\
+fecha? > ahora? \\
+clientes' = clientes \\
+turnos' = turnos \cup \{fecha? \mapsto dni?\}
+\end{schema}
+
+\begin{schema}{ErrorFechaPasada}
+\Xi AgendaDeTurnos \\
+fecha?:DATETIME \\
+ahora?:DATETIME
+\where
+fecha? \leq ahora?
+\end{schema}
+
+\begin{schema}{TurnoYaAsignado}
+\Xi AgendaDeTurnos \\
+fecha?:DATETIME
+\where
+fecha? \in \dom turnos
+\end{schema}
+
+\begin{zed}
+AsignarTurnoOk == AsignarTurnoCliente \lor AsignarTurnoPrimeraVez
+\end{zed}
+
+\begin{zed}
+AsignarTurnoError == ErrorFechaPasada \lor TurnoYaAsignado
+\end{zed}
+
+\begin{zed}
+AsignarTurno == AsignarTurnoOk \lor AsignarTurnoError
+\end{zed}
+
+\begin{schema}{BusquedaPorDNIOk}
+\Xi AgendaDeTurnos \\
+dni?:DNI \\
+resp!:\power DATETIME \\
+\where
+dni? \in \dom clientes \\
+resp! = \dom(turnos \rres \{dni?\})
+\end{schema}
+
+\begin{schema}{ClienteNoExisteDNI}
+\Xi AgendaDeTurnos \\
+dni?:DNI \\
+\where
+dni? \notin \dom clientes
+\end{schema}
+
+\begin{zed}
+BusquedaPorDNI == BusquedaPorDNIOk \lor ClienteNoExisteDNI
+\end{zed}
+
+\begin{schema}{BusquedaPorNombreOk}
+\Xi AgendaDeTurnos \\
+nombre?:NOMBRE \\
+resp!: DATETIME \pfun DNI \\
+\where
+nombre? \in \ran clientes \\
+resp! = turnos \rres (\dom (clientes \rres \{nombre?\}))
+\end{schema}
+
+\begin{schema}{ClienteNoExisteNombre}
+\Xi AgendaDeTurnos \\
+nombre?:NOMBRE \\
+\where
+nombre? \notin \ran clientes
+\end{schema}
+
+\begin{zed}
+BusquedaPorNombre == BusquedaPorNombreOk \lor ClienteNoExisteNombre
+\end{zed}
+
+\begin{schema}{BusquedaPorFecha}
+\Xi AgendaDeTurnos \\
+dia?:\power DATETIME \\
+resp!:DATETIME \pfun DNI
+\where
+resp! = dia? \dres turnos
+\end{schema}

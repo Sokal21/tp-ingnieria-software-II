@@ -1,0 +1,183 @@
+\begin{zed}
+[USER, GROUP]
+\also
+PERM ::= r | w
+\also
+ANS ::= yes | no 
+\end{zed}
+
+\begin{axdef}
+userGroups : USER \pfun \power GROUP
+\end{axdef}
+
+\begin{schema}{ACL}
+usrs: USER \pfun \power PERM \\
+grps: GROUP \pfun \power PERM
+\end{schema}
+
+\begin{schema}{ACLInit}
+ACL
+\where
+usrs = \emptyset \\
+grps = \emptyset
+\end{schema}
+
+\begin{schema}{ACLInv}
+ACL
+\where
+\dom (usrs) \subseteq \dom (userGroups)
+\end{schema}
+
+\begin{schema}{AddNewUserRight}
+\Delta ACL \\
+u? : USER \\ 
+r? : PERM \\
+\where 
+u? \notin \dom (usrs) \\
+u? \in \dom (userGroups) \\
+usrs' = usrs \oplus \{u? \mapsto \{r?\}\} \\
+grps' = grps
+\end{schema}
+
+\begin{schema}{AddExistingUserRight}
+\Delta ACL \\
+u? : USER \\ 
+r? : PERM \\
+\where 
+u? \in \dom (usrs) \\
+usrs' = usrs \oplus \{u? \mapsto \{r?\} \cup (usrs (u?))\} \\
+grps' = grps
+\end{schema}
+
+\begin{schema}{UserDoesNotExist}
+\Xi ACL \\
+u? : USER \\
+\where 
+u? \notin \dom(userGroups)
+\end{schema}
+
+\begin{zed}
+AddUserRight == AddNewUserRight \lor AddExistingUserRight \lor UserDoesNotExist
+\end{zed}
+
+\begin{schema}{AddNewGroupRight}
+\Delta ACL \\
+g? : GROUP \\ 
+r? : PERM \\
+\where 
+g? \notin \dom (grps) \\
+grps' = grps \oplus \{g? \mapsto \{r?\}\} \\
+usrs' = usrs
+\end{schema}
+
+\begin{schema}{AddExistingGroupRight}
+\Delta ACL \\
+g? : GROUP \\ 
+r? : PERM \\
+\where 
+g? \in \dom (grps) \\
+grps' = grps \oplus \{g? \mapsto \{r?\} \cup (grps (g?))\} \\
+usrs' = usrs
+\end{schema}
+
+\begin{zed}
+AddGroupRight == AddNewGroupRight \lor AddExistingGroupRight
+\end{zed}
+
+\begin{schema}{IsReaderUser}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (usrs) \\ 
+r \in usrs(u?) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsReaderGroup}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (userGroups) \\ 
+r \in \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsNotReaderNotInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \notin \dom (usrs) \\
+r \notin \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = no
+\end{schema}
+
+\begin{schema}{IsNotReaderInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \in \dom (usrs) \\
+r \notin usrs(u?) \\
+r \notin \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = no
+\end{schema}
+
+\begin{zed}
+IsNotReader == IsNotReaderNotInList \lor IsNotReaderInList\\
+
+IsReader == IsReaderUser \lor IsReaderGroup \lor IsNotReader \lor UserDoesNotExist
+\end{zed}
+
+\begin{schema}{IsWriterUser}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (usrs) \\ 
+w \in usrs(u?) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsWriterGroup}
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where
+u? \in \dom (userGroups) \\ 
+w \in \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = yes
+\end{schema}
+
+\begin{schema}{IsNotWriterNotInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \notin \dom (usrs) \\
+w \notin \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = no
+\end{schema}
+
+\begin{schema}{IsNotWriterInList} 
+\Xi ACL \\
+u? : USER \\
+ans! : ANS \\
+\where 
+u? \in \dom (userGroups) \\ 
+u? \in \dom (usrs) \\
+w \notin usrs(u?) \\
+w \notin \bigcup (\ran((userGroups (u?)) \dres grps)) \\
+ans! = no
+\end{schema}
+
+\begin{zed}
+IsNotWriter == IsNotWriterNotInList \lor IsNotWriterInList\\
+
+IsWriter == IsWriterUser \lor IsWriterGroup \lor IsNotWriter \lor UserDoesNotExist
+\end{zed}

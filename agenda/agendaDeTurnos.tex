@@ -1,0 +1,437 @@
+\documentclass[%
+  fleqn,colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue]{eptcs}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{z-eves}
+\usepackage{framed}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{xspace}
+
+\newcommand{\desig}[2]{\item #1 $\approx #2$}
+\newenvironment{designations}
+  {\begin{leftbar}
+    \begin{list}{}{\setlength{\labelsep}{0cm}
+                   \setlength{\labelwidth}{0cm}
+                   \setlength{\listparindent}{0cm}
+                   \setlength{\rightmargin}{\leftmargin}}}
+  {\end{list}\end{leftbar}}
+
+  \DeclareMathOperator{\Ima}{Im}
+
+  \newcommand{\setlog}{$\{log\}$\xspace}
+
+  \def\titlerunning{\setlog}
+  \def\authorrunning{F. Sansone}
+
+  \title{Trabajo Pr\'actico para Ingenier\'i{}a de Software}
+  \author{Franco Sansone}
+
+  \date{2019}
+
+  \begin{document}
+  \thispagestyle{empty}
+  \maketitle
+
+  \section{Requerimientos}
+  El usuario puede asociar un cliente (paciente si estuviese relacionado a la medicina) por nombre y DNI a un d\'i{}a y horario. Puede dar de baja un turno.
+
+  Se puede filtrar por fecha, nombre y DNI.
+
+  Podr\'i{}a ser usado por cualquiera que desarrolle sus actividades mediante turnos (m\'edicos, docentes que den clases particulares, psic\'ologos, etc).
+
+  \section{Especificaci\'on}
+  Designaciones.
+
+  \begin{designations}
+  \desig{$d$ es un DNI}{d \in DNI}
+  \desig{$n$ es un nombre}{n \in NAME}
+  \desig{$f$ es una fecha y hora}{f \in DATETIME}
+  \desig{El nombre de la persona con DNI $k$}{clientes~k}
+  \desig{El DNI de la persona con turno en fecha y hora $k$}{turnos~k}
+  \end{designations}
+
+  Entonces introducimos los siguientes tipos b\'asicos.
+
+  \begin{zed}
+  [DNI,NOMBRE,DATETIME]
+  \end{zed}
+
+  Ahora podemos definir el espacio de estados de la especificaci\'on de la siguiente forma.
+
+  \begin{schema}{AgendaDeTurnos}
+  clientes: DNI \pfun NOMBRE \\
+  turnos: DATETIME \pfun DNI
+  \end{schema}
+
+  El estado inicial de la agenda de turnos es el siguiente.
+
+  \begin{schema}{AgendaDeTurnosInit}
+  AgendaDeTurnos
+  \where
+  clientes = \emptyset \\
+  turnos = \emptyset
+  \end{schema}
+
+  Primero modelo el esquema que describe los predicados que deber\'i{}an ser invariantes de estado.
+
+  \begin{schema}{AgendaDeTurnosInv}
+  AgendaDeTurnos
+  \where
+  \dom clientes = \ran turnos
+  \end{schema}
+
+  Avanzo con la primera operaci\'on: asignar un turno.
+
+  \begin{schema}{AsignarTurnoPrimeraVez}
+  \Delta AgendaDeTurnos \\
+  nombre?:NAME \\
+  dni?:DNI \\
+  fecha?:DATETIME \\
+  ahora?:DATETIME \\
+  \where
+  dni? \notin \dom clientes \\
+  fecha? \notin \dom turnos \\
+  fecha?>ahora? \\
+  clientes' = clientes \cup \{dni? \mapsto name?\} \\
+  turnos' = turnos \cup \{fecha? \mapsto dni?\} \\
+  \end{schema}
+
+  El argumento de entrada $ahora?$ no necesariamente tiene que ser una entrada ingresada por el usuario.
+  El pasaje de este argumento a la subrutina deber\'i{}a ser transparente para el usuario.
+
+  \begin{schema}{AsignarTurnoCliente}
+  \Delta AgendaDeTurnos \\
+  dni?:DNI \\
+  fecha?:DATETIME \\
+  ahora?:DATETIME
+  \where
+  dni? \in \dom clientes \\
+  fecha? \notin \dom turnos \\
+  fecha? > ahora? \\
+  turnos' = turnos \cup \{fecha? \mapsto dni?\} \\
+  clientes' = clientes \\
+  \end{schema}
+
+  \begin{schema}{ErrorFechaPasada}
+  \Xi AgendaDeTurnos \\
+  fecha?:DATETIME \\
+  ahora?:DATETIME \\
+  \where
+  fecha? \leq ahora? \\
+  \end{schema}
+
+  \begin{schema}{TurnoYaAsignado}
+  \Xi AgendaDeTurnos \\
+  fecha?:DATETIME \\
+  \where
+  fecha? \in turnos
+  \end{schema}
+
+  \begin{zed}
+  AsignarTurnoOk  == AsignarTurnoPrimeraVez \lor AsignarTurnoCliente \\
+  AsignarTurnoError == ErrorFechaPasada \lor TurnoYaAsignado \\
+  AsignarTurno == AsignarTurnoOk \lor AsignarTurnoError
+  \end{zed}
+
+  Las siguientes operaciones corresponden a la b\'usqueda de turnos por nombre, DNI y fecha.
+
+  \begin{schema}{BusquedaPorDNIOk}
+  \Xi AgendaDeTurnos \\
+  dni?:DNI \\
+  resp!:\power DATETIME \\
+  \where
+  dni? \in \dom clientes \\
+  resp! = \dom(turnos \rres \{dni?\})
+  \end{schema}
+
+  \begin{schema}{ClienteNoExisteDNI}
+  \Xi AgendaDeTurnos \\
+  dni?:DNI \\
+  \where
+  dni? \notin \dom clientes
+  \end{schema}
+
+  \begin{zed}
+  BusquedaPorDNI == BusquedaPorDNIOk \lor ClienteNoExisteDNI
+  \end{zed}
+
+  \begin{schema}{BusquedaPorNombreOk}
+  \Xi AgendaDeTurnos \\
+  nombre?:NOMBRE \\
+  resp!: DATETIME \pfun DNI \\
+  \where
+  nombre? \in \ran clientes \\
+  resp! = turnos \rres (\dom (clientes \rres \{nombre?\}))
+  \end{schema}
+
+  \begin{schema}{ClienteNoExisteNombre}
+  \Xi AgendaDeTurnos \\
+  nombre?:NOMBRE \\
+  \where
+  nombre? \notin \ran clientes
+  \end{schema}
+
+  \begin{zed}
+  BusquedaPorNombre == BusquedaPorNombreOk \lor ClienteNoExisteNombre
+  \end{zed}
+
+  \begin{schema}{BusquedaPorFecha}
+  \Xi AgendaDeTurnos \\
+  dia?:\power DATETIME \\
+  resp!:DATETIME \pfun DNI
+  \where
+  resp! = dia? \dres turnos
+  \end{schema}
+
+\section{Simulaciones}
+
+La primera simulaci\'on es la siguiente:
+
+\begin{verbatim}
+agendaDeTurnosInit(S0) &
+asignarTurno(S0,'Franco',37449292,201904011900,201903301900,S1) &
+asignarTurno(S1,'Oscar',22099399,201904051730,201903301901,S2) &
+asignarTurno(S2,'',22099399,201904011900,201903301903,S3) &
+busquedaPorDni(S3,37449292,R1,S4) & busquedaPorNombre(S4,'Oscar',R2,S5).
+\end{verbatim}
+cuyo primer resultado es:
+\begin{verbatim}
+S0 = {[clientes,{}],[turnos,{}]},
+S1 = {[clientes,{[37449292,Franco]}],[turnos,{[201904011900,37449292]}]},
+S2 = {[clientes,{[37449292,Franco],[22099399,Oscar]}],
+  [turnos,{[201904011900,37449292],[201904051730,22099399]}]},
+S3 = {[clientes,{[37449292,Franco],[22099399,Oscar]}],
+  [turnos,{[201904011900,37449292],[201904051730,22099399]}]},
+S4 = {[clientes,{[37449292,Franco],[22099399,Oscar]}],
+  [turnos,{[201904011900,37449292],[201904051730,22099399]}]},
+S5 = {[clientes,{[37449292,Franco],[22099399,Oscar]}],
+  [turnos,{[201904011900,37449292],[201904051730,22099399]}]},
+S6 = {[clientes,{[37449292,Franco],[22099399,Oscar]}],
+  [turnos,{[201904011900,37449292],[201904051730,22099399]}]}
+R1 = {201904011900},
+R2 = {[201904051730,22099399]},
+R3 = {[201904011900,37449292]},
+\end{verbatim}
+
+Esta es la segunda simulaci\'on:
+
+\begin{verbatim}
+S0={[turnos,
+  { [201904011900,37449292],
+    [201904011920, 33456787],
+    [201904011940, 32890789],
+    [201904031900,11235678]
+  }],
+  { [37449292,'Franco'],
+    [33456787,'Ramiro'],
+    [11235678,'Florencia']
+}} &
+busquedaPorFecha(S0,{201904011900,201904011920,201904011940},R,S1).
+\end{verbatim}
+
+cuya ejecuci\'on devolvi\'o:
+
+\begin{verbatim}
+S0 = {[turnos,
+  {[201904011900,37449292],
+  [201904011920,33456787],
+  [201904011940,32890789],
+  [201904031900,11235678]}],
+  {[37449292,Franco],[33456787,Ramiro],[11235678,Florencia]}},
+R = {[201904011900,37449292],[201904011920,33456787],[201904011940,32890789]},
+S1 = {[turnos,{[201904011900,37449292],[201904011920,33456787],
+[201904011940,32890789],[201904031900,11235678]}],
+{[37449292,Franco],[33456787,Ramiro],[11235678,Florencia]}}
+\end{verbatim}
+
+\section{Demostraciones con \setlog}
+
+\paragraph{Primera demostraci\'on con \setlog.}
+
+Demuestro que $AsignarTurno$ preserva el invariante $AgendaDeTurnosInv$, o sea el siguiente teorema:
+\begin{theorem}{AsignarTurnoPI}
+AgendaDeTurnosInv \land AsignarTurno \implies AgendaDeTurnosInv'
+\end{theorem}
+el cual en \setlog se escribe de la siguiente forma:
+\begin{verbatim}
+S = {[clientes,C],[turnos,T]} &
+S_ = {[clientes,C_],[turnos,T_]} &
+ran(T,It) &
+dom(C, It) &
+asignarTurno(S,B,K,M,H,S_) &
+ran(T_,It_) &
+ndom(C_,It_).
+\end{verbatim}
+
+\paragraph{Segunda demostraci\'on con \setlog.}
+Demuestro que $AsignarTurno$ preserva el invariante $turnos \in DATETIME \pfun DNI$, o sea el teorema:
+\begin{theorem}{TurnosIsPfun}
+turnos \in  DATETIME \pfun DNI \land AsignarTurno \implies turnos' \in DATETIME \pfun DNI
+\end{theorem}
+el cual en \setlog se escribe de la siguiente forma:
+\begin{verbatim}
+S = {[turnos,T],[clientes,C]} &
+S_ = {[turnos,T_],[clientes,C_]} &
+pfun(T) &
+asignarTurno(S,F,J,M,K,S_) &
+npfun(T_).
+\end{verbatim}
+
+\section{Demostraci\'on con Z/EVES}
+Para esta prueba sustitu\'i{} la precondici\'on de $dni? \in \dom clientes$
+por $(dni? \mapsto nombre?) \in clientes$ en $AsignarTurnoCliente$ (obviamente,
+agregando $nombre? \in NOMBRE$ como par\'ametro de entrada).
+
+% read "/home/fsansone/ingenieria/schedule/zeves.tex";
+
+\begin{theorem}{AsignarTurnoPI}
+AgendaDeTurnosInv \land AsignarTurno \implies AsignarTurnoPI'
+\end{theorem}
+
+\begin{zproof}[AsignarTurnoPI]
+invoke AsignarTurno;
+split AsignarTurnoOk;
+split AsignarTurnoPrimeraVez;
+cases;
+prove by reduce;
+next;
+split AsignarTurnoCliente;
+cases;
+prove by reduce;
+next;
+prove by reduce;
+next;
+\end{zproof}
+
+
+\section{Casos de prueba}
+El script que us\'e para generar casos de prueba con Fastest es el siguiente:
+\begin{verbatim}
+loadspec fastest.tex
+selop AsignarTurno
+genalltt
+addtactic AsignarTurno_DNF_2 SP \cup clientes \cup \{dni? \mapsto nombre?\}
+addtactic AsignarTurno_DNF_2 SP \cup turnos \cup \{fecha? \mapsto dni?\}
+addtactic AsignarTurno_DNF_1 SP \cup turnos \cup \{fecha? \mapsto dni?\}
+genalltt
+genalltca
+\end{verbatim}
+
+Gener\'e casos de prueba para la operaci\'on $AsignarTurno$ aplicando DNF y SP a las
+expresiones $clientes \cup \{dni? \mapsto nombre?\}$ para particionar la clase
+de prueba $AsignarTurno\_DNF\_2$ y $turnos \cup \{fecha? \mapsto dni?\}$
+para particionar las clases de prueba $AsignarTurno\_DNF\_2$ y $AsignarTurno\_DNF\_1$.
+Los casos de prueba generados por Fastest son los siguientes:
+
+\begin{schema}{AsignarTurno\_ SP\_ 74\_ TCASE}\\
+ clientes : DNI \pfun NOMBRE \\
+ turnos : DATETIME \pfun DNI \\
+ dni? : DNI \\
+ fecha? : DATETIME \\
+ ahora? : DATETIME \\
+ nombre? : NOMBRE
+\where
+ dni? \in \dom clientes \\
+ fecha? \notin \dom turnos \\
+ fecha? > ahora? \\
+ turnos = \{ \} \\
+ \{ fecha? \mapsto dni? \} \neq \{ \} \\
+ nombre? = nombre1 \\
+ turnos =~\emptyset \\
+ dni? = dni1 \\
+ clientes = \{ ( dni1 , nombre1 ) \} \\
+ ahora? = 0 \\
+ fecha? = 1
+\end{schema}
+
+
+\begin{schema}{AsignarTurno\_ SP\_ 18\_ TCASE}\\
+ clientes : DNI \pfun NOMBRE \\
+ turnos : DATETIME \pfun DNI \\
+ dni? : DNI \\
+ fecha? : DATETIME \\
+ ahora? : DATETIME \\
+ nombre? : NOMBRE
+\where
+ dni? \notin \dom clientes \\
+ fecha? \notin \dom turnos \\
+ fecha? > ahora? \\
+ clientes = \{ \} \\
+ \{ dni? \mapsto nombre? \} \neq \{ \} \\
+ turnos = \{ \} \\
+ \{ fecha? \mapsto dni? \} \neq \{ \} \\
+ nombre? = nombre1 \\
+ turnos =~\emptyset \\
+ dni? = dni1 \\
+ clientes =~\emptyset \\
+ ahora? = 0 \\
+ fecha? = 1
+\end{schema}
+
+
+\begin{schema}{AsignarTurno\_ SP\_ 34\_ TCASE}\\
+ clientes : DNI \pfun NOMBRE \\
+ turnos : DATETIME \pfun DNI \\
+ dni? : DNI \\
+ fecha? : DATETIME \\
+ ahora? : DATETIME \\
+ nombre? : NOMBRE
+\where
+ dni? \notin \dom clientes \\
+ fecha? \notin \dom turnos \\
+ fecha? > ahora? \\
+ clientes \neq \{ \} \\
+ \{ dni? \mapsto nombre? \} \neq \{ \} \\
+ clientes \cap \{ dni? \mapsto nombre? \} = \{ \} \\
+ turnos = \{ \} \\
+ \{ fecha? \mapsto dni? \} \neq \{ \} \\
+ nombre? = nombre1 \\
+ turnos =~\emptyset \\
+ dni? = dni1 \\
+ clientes = \{ ( dni0 , nombre1 ) \} \\
+ ahora? = 0 \\
+ fecha? = 1
+\end{schema}
+
+
+\begin{schema}{AsignarTurno\_ DNF\_ 3\_ TCASE}\\
+ clientes : DNI \pfun NOMBRE \\
+ turnos : DATETIME \pfun DNI \\
+ dni? : DNI \\
+ fecha? : DATETIME \\
+ ahora? : DATETIME \\
+ nombre? : NOMBRE
+\where
+ fecha? \leq ahora? \\
+ nombre? = nombre1 \\
+ turnos =~\emptyset \\
+ dni? = dni1 \\
+ clientes =~\emptyset \\
+ ahora? = 0 \\
+ fecha? = 0
+\end{schema}
+
+
+\begin{schema}{AsignarTurno\_ DNF\_ 4\_ TCASE}\\
+ clientes : DNI \pfun NOMBRE \\
+ turnos : DATETIME \pfun DNI \\
+ dni? : DNI \\
+ fecha? : DATETIME \\
+ ahora? : DATETIME \\
+ nombre? : NOMBRE
+\where
+ fecha? \in \dom turnos \\
+ nombre? = nombre1 \\
+ turnos = \{ ( 0 , dni1 ) \} \\
+ dni? = dni1 \\
+ clientes =~\emptyset \\
+ ahora? = 0 \\
+ fecha? = 0
+\end{schema}
+
+\end{document}

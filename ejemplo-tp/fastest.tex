@@ -1,0 +1,72 @@
+\begin{zed}
+[NAME,DATE]
+\end{zed}
+
+\begin{schema}{BirthdayBook}
+known: \power NAME \\
+birthday: NAME \pfun DATE
+\end{schema}
+
+\begin{schema}{BirthdayBookInit}
+BirthdayBook
+\where
+known = \emptyset \\
+birthday = \emptyset
+\end{schema}
+
+\begin{schema}{BirthdayBookInv}
+BirthdayBook
+\where
+known = \dom birthday
+\end{schema}
+
+\begin{schema}{AddBirthdayOk}
+\Delta BirthdayBook \\
+name?:NAME \\
+date?:DATE
+\where
+name? \notin known \\
+known' = known \cup \{name?\} \\
+birthday' = birthday \cup \{name? \mapsto date?\}
+\end{schema}
+
+\begin{schema}{NameAlreadyExists}
+\Xi BirthdayBook \\
+name?:NAME
+\where
+name? \in known
+\end{schema}
+
+\begin{zed}
+AddBirthday == AddBirthdayOk \lor NameAlreadyExists
+\end{zed}
+
+\begin{schema}{FindBirthdayOk}
+\Xi BirthdayBook \\
+name?:NAME \\
+date!: DATE
+\where
+name? \in known \\
+date! = birthday(name?)
+\end{schema}
+
+\begin{schema}{NotAFriend}
+\Xi BirthdayBook \\
+name?:NAME
+\where
+name? \notin known
+\end{schema}
+
+\begin{zed}
+FindBirthday == FindBirthdayOk \lor NotAFriend
+\end{zed}
+
+\begin{schema}{Remind}
+\Xi BirthdayBook \\
+today?:DATE \\
+cards!: \power NAME
+\where
+cards! = \dom(birthday \rres \{today?\})
+\end{schema}
+
+
