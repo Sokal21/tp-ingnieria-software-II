@@ -1,8 +1,7 @@
 \begin{zed}
-[PROPID,LEGAJO,STRING]
-\also
-msg ::= ok | error
-\also
+[PROPID,LEGAJO,STRING] \\
+N == \nat \\
+msg ::= ok | error \\
 ESTADOPROPIEDAD ::= venta | reservada | dadadebaja | vendida
 \end{zed}
 
@@ -12,24 +11,22 @@ titulos: PROPID \pfun STRING \\
 precios: PROPID \pfun \nat \\
 estados: PROPID \pfun ESTADOPROPIEDAD \\
 gestores: PROPID \pfun LEGAJO \\
-
 nombres: LEGAJO \pfun STRING \\
 telefonos: LEGAJO \pfun STRING \\
-emails: LEGAJO \pfun STRING \\
+emails: LEGAJO \pfun STRING
 \end{schema}
 
 \begin{schema}{InmobiliariaInicial}
 Inmobiliaria
 \where
-direcciones =  \emptyset  \\
-titulos =  \emptyset  \\
-precios =  \emptyset  \\
-estados =  \emptyset  \\
-gestores =  \emptyset  \\
-
-nombres =  \emptyset  \\
-telefonos =  \emptyset  \\
-emails =  \emptyset  \\
+direcciones = \emptyset  \\
+titulos = \emptyset  \\
+precios = \emptyset  \\
+estados = \emptyset  \\
+gestores = \emptyset  \\
+nombres = \emptyset  \\
+telefonos = \emptyset  \\
+emails = \emptyset
 \end{schema}
 
 \begin{schema}{InmobiliariaInvariante}
@@ -39,120 +36,97 @@ Inmobiliaria
 \dom titulos = \dom precios \\
 \dom precios = \dom estados \\
 \dom estados = \dom gestores \\
-
 \dom nombres = \dom telefonos \\
 \dom telefonos = \dom emails \\
-
-\ran gestores \subseteq \dom nombres \\
+\ran gestores \subseteq \dom nombres
 \end{schema}
 
 \begin{schema}{PropiedadExiste}
 \Xi Inmobiliaria \\
-id?: PROPID \\
-res!: msg \\
+propId?:PROPID \\
+res!:msg
 \where
-id? \in \dom direcciones \\
-res! = error \\
+propId? \in \dom direcciones \\
+res! = error
 \end{schema}
 
 \begin{schema}{VendedorNoExiste}
 \Xi Inmobiliaria \\
-prod?: LEGAJO \\
-res!: msg \\
+prod?:LEGAJO \\
+res!:msg
 \where
 prod? \notin \dom nombres \\
-res! = error \\
+res! = error
 \end{schema}
 
 \begin{schema}{InsertarPropiedadOk}
 \Delta Inmobiliaria \\
-id?: PROPID \\
-dir?: STRING \\
-tit?: STRING \\
-p?: \nat \\
-prod?: LEGAJO \\
-res!: msg \\
+propId?:PROPID \\
+prod?:LEGAJO \\
+dir?:STRING \\
+tit?:STRING \\
+p?:N \\
+res!:msg
 \where
 prod? \in \dom nombres \\
-id? \notin \dom direcciones \\
-\ \\
-direcciones =  direcciones \cup \{id? \mapsto dir?\}  \\
-titulos = titulos \cup \{id? \mapsto tit?\}  \\
-precios = precios \cup \{id? \mapsto p?\}  \\
-estados = estados \cup \{id? \mapsto venta\}  \\
-gestores = gestores \cup \{id? \mapsto prod?\}  \\
-\ \\
+propId? \notin \dom direcciones \\
+direcciones =  direcciones \cup \{propId? \mapsto dir?\}  \\
+titulos = titulos \cup \{propId? \mapsto tit?\}  \\
+precios = precios \cup \{propId? \mapsto p?\}  \\
+estados = estados \cup \{propId? \mapsto venta\}  \\
+gestores = gestores \cup \{propId? \mapsto prod?\}  \\
 nombres' =  nombres  \\
 telefonos' =  telefonos  \\
 emails' =  emails  \\
-\ \\
-res! = ok \\
+res! = ok
 \end{schema}
 
 \begin{zed}
-InsertarPropiedad \defs InsertarPropiedadOk \lor VendedorNoExiste \lor PropiedadExiste
+InsertarPropiedad == InsertarPropiedadOk \lor VendedorNoExiste \lor PropiedadExiste
 \end{zed}
-
-La segunda operación a especificar es la de crear un vendedor y almacenarlo.
 
 \begin{schema}{VendedorExiste}
 \Xi Inmobiliaria \\
-id?: LEGAJO \\
-res!: msg \\
+propId?:LEGAJO \\
+res!:msg
 \where
-id? \in \dom nombres \\
-res! = error \\
+propId? \in \dom nombres \\
+res! = error
 \end{schema}
 
 \begin{schema}{InsertarVendedorOk}
 \Delta Inmobiliaria \\
-nom?: STRING \\
-tel?: STRING \\
-em?: STRING \\
-prod?: LEGAJO \\
-res!: msg \\
+nom?:STRING \\
+tel?:STRING \\
+em?:STRING \\
+prod?:LEGAJO \\
+res!:msg
 \where
 prod? \notin \dom nombres \\
-
-nombres' =  nombres \cup \{prod? \mapsto nom?\}  \\
-telefonos' =  telefonos \cup \{prod? \mapsto tel?\}  \\
+nombres' = nombres \cup \{prod? \mapsto nom?\}  \\
+telefonos' = telefonos \cup \{prod? \mapsto tel?\}  \\
 emails' =  emails \cup \{prod? \mapsto em?\}  \\
-
-direcciones' =  direcciones\\
+direcciones' = direcciones\\
 titulos' = titulos\\
 precios' = precios\\
 estados' = estados\\
 gestores' = gestores\\
-
-res! = ok \\
+res! = ok
 \end{schema}
 
 \begin{zed}
-InsertarVendedor \defs InsertarVendedorOk \lor VendedorExiste
+InsertarVendedor == InsertarVendedorOk \lor VendedorExiste
 \end{zed}
 
 \begin{schema}{PropiedadesGestionadasOk}
 \Xi Inmobiliaria \\
-prod?: LEGAJO \\
-props!: \power PROPID \\
+prod?:LEGAJO \\
+props!:\power PROPID
 \where
 prod? \in \dom nombres \\
 props! = \dom(gestores \rres \{prod?\})
 \end{schema}
 
 \begin{zed}
-PropiedadesGestionadas \defs PropiedadesGestionadasOk \lor VendedorNoExiste
+PropiedadesGestionadas == PropiedadesGestionadasOk \lor VendedorNoExiste
 \end{zed}
-
-\begin{theorem}{InsertarPropiedadPI}
-InmobiliariaInvariante \land InsertarPropiedad \implies InmobiliariaInvariante'
-\end{theorem}
-
-\begin{zproof}[InsertarPropiedadPI]
-invoke InsertarPropiedad;
-split InsertarPropiedadOk;
-split VendedorNoExiste;
-split PropiedadExiste;
-cases;
-prove by reduce;
-\end{zproof}

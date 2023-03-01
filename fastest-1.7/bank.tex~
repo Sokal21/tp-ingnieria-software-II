@@ -1,0 +1,146 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{z-eves}
+\usepackage[cm]{fullpage}
+
+\begin{document}
+\begin{zed}
+[NCTA] \also
+
+MENSAJES ::= ok | numeroClienteEnUso | noPoseeSaldoSuficiente | saldoNoNulo
+\end{zed}
+
+\begin{schema}{Banco}
+cajas: NCTA \pfun \nat
+\end{schema}
+
+\begin{schema}{DepositarOk}
+\Delta Banco \\
+num?: NCTA; m?: \num
+\where
+num? \in \dom cajas \\
+m? > 0 \\
+cajas' = cajas \oplus \{num? \mapsto cajas~num? + m?\}
+\end{schema}
+
+\begin{zed}
+DepositarE1 == [\Xi Banco; num?:NCTA | num? \notin \dom cajas]
+\end{zed}
+
+\begin{zed}
+DepositarE2 == [\Xi Banco; m?: \num | m? \leq 0]
+\end{zed}
+
+\begin{zed}
+Depositar == DepositarOk \lor DepositarE1 \lor DepositarE2
+\end{zed}
+
+\begin{schema}{NuevoClienteOk}
+\Delta Banco \\
+num?:NCTA \\
+rep!:MENSAJES
+\where
+num? \notin \dom cajas \\
+cajas' = cajas \cup \{num? \mapsto 0\} \\
+rep! = ok
+\end{schema}
+
+\begin{schema}{NuevoClienteE}
+
+\Xi Banco \\
+num?:NCTA \\
+rep!:MENSAJES
+\where
+num? \in \dom cajas \\
+rep! = numeroClienteEnUso
+\end{schema}
+
+\begin{zed}
+NuevoCliente == NuevoClienteOk \lor NuevoClienteE
+\end{zed}
+
+\begin{schema}{ExtraerOk}
+\Delta Banco \\
+num?:NCTA \\
+m?:\nat \\
+rep!:MENSAJES
+\where
+num? \in \dom cajas \\
+0 < m? \\
+m? \leq cajas~num? \\
+cajas' = cajas \oplus \{num? \mapsto (cajas~num?) - m?\} \\
+rep! = ok
+\end{schema}
+
+\begin{zed}
+ExtraerE1 == DepositarE1 \also
+
+ExtraerE2 == DepositarE2
+\end{zed}
+
+\begin{schema}{ExtraerE3}
+\Xi Banco \\
+num?:NCTA \\
+m?:\nat \\
+rep!:MENSAJES
+\where
+m? > cajas~num? \\
+num? \in \dom cajas \\
+rep! = noPoseeSaldoSuficiente
+\end{schema}
+
+\begin{zed}
+ExtraerE == ExtraerE1 \lor ExtraerE2 \lor ExtraerE3 \also
+
+Extraer == ExtraerOk \lor ExtraerE
+\end{zed}
+
+\begin{schema}{PedirSaldoOk}
+\Xi Banco \\
+num?:NCTA \\
+saldo!:\nat \\
+rep!:MENSAJES
+\where
+num? \in \dom cajas \\
+saldo! = cajas~num? \\
+rep! = ok
+\end{schema}
+
+\begin{zed}
+PedirSaldoE == DepositarE1 \also
+
+PedirSaldo == PedirSaldoOk \lor PedirSaldoE
+\end{zed}
+
+\begin{schema}{CerrarCajaOk}
+\Delta Banco \\
+num?:NCTA \\
+rep!:MENSAJES
+\where
+num? \in \dom cajas \\
+cajas~num? = 0 \\
+cajas' = \{num?\} \ndres cajas \\
+rep! = ok
+\end{schema}
+
+\begin{zed}
+CerrarCajaE1 == DepositarE1
+\end{zed}
+
+\begin{schema}{CerrarCajaE2}
+\Xi Banco \\
+num?:NCTA \\
+rep!:MENSAJES
+\where
+num? \in \dom cajas \\
+cajas~num? \neq 0 \\
+rep! = saldoNoNulo
+\end{schema} 
+
+\begin{zed}
+CerrarCajaE == CerrarCajaE1 \lor CerrarCajaE2 \also
+
+CerrarCaja == CerrarCajaOk \lor CerrarCajaE \\
+\end{zed}
+\end{document}
+
+

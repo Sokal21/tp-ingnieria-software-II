@@ -1,0 +1,132 @@
+\begin{zed}
+[PROPID,LEGAJO,STRING] \\
+N == \nat \\
+msg ::= ok | error \\
+ESTADOPROPIEDAD ::= venta | reservada | dadadebaja | vendida
+\end{zed}
+
+\begin{schema}{Inmobiliaria}
+direcciones: PROPID \pfun STRING \\
+titulos: PROPID \pfun STRING \\
+precios: PROPID \pfun \nat \\
+estados: PROPID \pfun ESTADOPROPIEDAD \\
+gestores: PROPID \pfun LEGAJO \\
+nombres: LEGAJO \pfun STRING \\
+telefonos: LEGAJO \pfun STRING \\
+emails: LEGAJO \pfun STRING
+\end{schema}
+
+\begin{schema}{InmobiliariaInicial}
+Inmobiliaria
+\where
+direcciones = \emptyset  \\
+titulos = \emptyset  \\
+precios = \emptyset  \\
+estados = \emptyset  \\
+gestores = \emptyset  \\
+nombres = \emptyset  \\
+telefonos = \emptyset  \\
+emails = \emptyset
+\end{schema}
+
+\begin{schema}{InmobiliariaInvariante}
+Inmobiliaria
+\where
+\dom direcciones = \dom titulos \\
+\dom titulos = \dom precios \\
+\dom precios = \dom estados \\
+\dom estados = \dom gestores \\
+\dom nombres = \dom telefonos \\
+\dom telefonos = \dom emails \\
+\ran gestores \subseteq \dom nombres
+\end{schema}
+
+\begin{schema}{PropiedadExiste}
+\Xi Inmobiliaria \\
+propId?:PROPID \\
+res!:msg
+\where
+propId? \in \dom direcciones \\
+res! = error
+\end{schema}
+
+\begin{schema}{VendedorNoExiste}
+\Xi Inmobiliaria \\
+prod?:LEGAJO \\
+res!:msg
+\where
+prod? \notin \dom nombres \\
+res! = error
+\end{schema}
+
+\begin{schema}{InsertarPropiedadOk}
+\Delta Inmobiliaria \\
+propId?:PROPID \\
+prod?:LEGAJO \\
+dir?:STRING \\
+tit?:STRING \\
+p?:N \\
+res!:msg
+\where
+prod? \in \dom nombres \\
+propId? \notin \dom direcciones \\
+direcciones =  direcciones \cup \{propId? \mapsto dir?\}  \\
+titulos = titulos \cup \{propId? \mapsto tit?\}  \\
+precios = precios \cup \{propId? \mapsto p?\}  \\
+estados = estados \cup \{propId? \mapsto venta\}  \\
+gestores = gestores \cup \{propId? \mapsto prod?\}  \\
+nombres' =  nombres  \\
+telefonos' =  telefonos  \\
+emails' =  emails  \\
+res! = ok
+\end{schema}
+
+\begin{zed}
+InsertarPropiedad == InsertarPropiedadOk \lor VendedorNoExiste \lor PropiedadExiste
+\end{zed}
+
+\begin{schema}{VendedorExiste}
+\Xi Inmobiliaria \\
+propId?:LEGAJO \\
+res!:msg
+\where
+propId? \in \dom nombres \\
+res! = error
+\end{schema}
+
+\begin{schema}{InsertarVendedorOk}
+\Delta Inmobiliaria \\
+nom?:STRING \\
+tel?:STRING \\
+em?:STRING \\
+prod?:LEGAJO \\
+res!:msg
+\where
+prod? \notin \dom nombres \\
+nombres' = nombres \cup \{prod? \mapsto nom?\}  \\
+telefonos' = telefonos \cup \{prod? \mapsto tel?\}  \\
+emails' =  emails \cup \{prod? \mapsto em?\}  \\
+direcciones' = direcciones\\
+titulos' = titulos\\
+precios' = precios\\
+estados' = estados\\
+gestores' = gestores\\
+res! = ok
+\end{schema}
+
+\begin{zed}
+InsertarVendedor == InsertarVendedorOk \lor VendedorExiste
+\end{zed}
+
+\begin{schema}{PropiedadesGestionadasOk}
+\Xi Inmobiliaria \\
+prod?:LEGAJO \\
+props!:\power PROPID
+\where
+prod? \in \dom nombres \\
+props! = \dom(gestores \rres \{prod?\})
+\end{schema}
+
+\begin{zed}
+PropiedadesGestionadas == PropiedadesGestionadasOk \lor VendedorNoExiste
+\end{zed}
