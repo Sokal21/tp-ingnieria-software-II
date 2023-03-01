@@ -1,6 +1,8 @@
 \begin{zed}
 [PROPID,LEGAJO,STRING]
 \also
+N == \nat
+\also
 msg ::= ok | error
 \also
 ESTADOPROPIEDAD ::= venta | reservada | dadadebaja | vendida
@@ -67,25 +69,23 @@ res! = error \\
 \begin{schema}{InsertarPropiedadOk}
 \Delta Inmobiliaria \\
 id?: PROPID \\
+prod?: LEGAJO \\
 dir?: STRING \\
 tit?: STRING \\
-p?: \nat \\
-prod?: LEGAJO \\
+p?: N \\
 res!: msg \\
 \where
 prod? \in \dom nombres \\
 id? \notin \dom direcciones \\
-\ \\
 direcciones =  direcciones \cup \{id? \mapsto dir?\}  \\
 titulos = titulos \cup \{id? \mapsto tit?\}  \\
 precios = precios \cup \{id? \mapsto p?\}  \\
 estados = estados \cup \{id? \mapsto venta\}  \\
 gestores = gestores \cup \{id? \mapsto prod?\}  \\
-\ \\
 nombres' =  nombres  \\
 telefonos' =  telefonos  \\
 emails' =  emails  \\
-\ \\
+
 res! = ok \\
 \end{schema}
 
