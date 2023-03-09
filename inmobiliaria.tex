@@ -525,107 +525,134 @@ El script que usé para generar casos de prueba con Fastest es el siguiente:
 
 \begin{verbatim}
 loadspec fastest.tex
-selop InsertarPropiedad
+selop InsertarVendedor
 genalltt
-addtactic InsertarPropiedad_DNF_1 SP \cup nombres \cup \{prod? \mapsto nom?\}
-addtactic InsertarPropiedad_DNF_1 SP 
-\cup direcciones \cup \{propId? \mapsto dir?\}
+addtactic InsertarVendedor_DNF_1 SP \cup nombres \cup \{prod? \mapsto nom?\}
+addtactic InsertarVendedor_DNF_1 SP \cup telefonos \cup \{prod? \mapsto tel?\}
 genalltt
 genalltca
 \end{verbatim}
 
-Genere los casos de prueba para la operación $InsertarPropiedad$ aplicando DNF, y luego aplico SP sobre la expresion $ nombres \cup \{prod? \mapsto nom?\}$ y $direcciones \cup \{propId? \mapsto dir?\}$  para particionar la clase de prueba $InsertarPropiedad\_DNF\_1$.
+Genere los casos de prueba para la operación $InsertarPropiedad$ aplicando DNF, y luego aplico SP sobre la expresion $ nombres \cup \{prod? \mapsto nom?\}$ y $telefonos \cup \{prod? \mapsto tel?\}$  para particionar la clase de prueba $InsertarVendedor\_DNF\_1$.
 
 Los casos de prueba generados por Fastest son los siguientes:
 
-\begin{schema}{AsignarTurno\_ SP\_ 39}\\
-clientes : DNI \pfun NOMBRE \\
-turnos : DATETIME \pfun DNI \\
-dni? : DNI \\
-fecha? : DATETIME \\
-ahora? : DATETIME \\
-nombre? : nombre\where
-dni? \notin \dom clientes \\
-fecha? \notin \dom turnos \\
-fecha? > ahora? \\
-clientes \neq \{ \} \\
-\{ dni? \mapsto nombre? \} \neq \{ \} \\
-clientes \cap \{ dni? \mapsto nombre? \} = \{ \} \\
-turnos \neq \{ \} \\
-\{ fecha? \mapsto dni? \} \neq \{ \} \\
-\{ fecha? \mapsto dni? \} = turnos
-\end{schema} 
-
-\begin{schema}{AsignarTurno\_ SP\_ 36}\\
-clientes : DNI \pfun NOMBRE \\
-turnos : DATETIME \pfun DNI \\
-dni? : DNI \\
-fecha? : DATETIME \\
-ahora? : DATETIME \\
-nombre? : NOMBRE
+\begin{schema}{InsertarVendedor\_ SP\_ 22}\\
+ direcciones : PROPID \pfun STRING \\
+ titulos : PROPID \pfun STRING \\
+ precios : PROPID \pfun \nat \\
+ estados : PROPID \pfun ESTADOPROPIEDAD \\
+ gestores : PROPID \pfun LEGAJO \\
+ nombres : LEGAJO \pfun STRING \\
+ telefonos : LEGAJO \pfun STRING \\
+ emails : LEGAJO \pfun STRING \\
+ nom? : STRING \\
+ tel? : STRING \\
+ em? : STRING \\
+ prod? : LEGAJO \\
+ propId? : LEGAJO 
 \where
-dni? \notin \dom clientes \\
-fecha? \notin \dom turnos \\
-fecha? > ahora? \\
-clientes \neq \{ \} \\
-\{ dni? \mapsto nombre? \} \neq \{ \} \\
-clientes \cap \{ dni? \mapsto nombre? \} = \{ \} \\
-turnos \neq \{ \} \\
-\{ fecha? \mapsto dni? \} \neq \{ \} \\
-turnos \cap \{ fecha? \mapsto dni? \} = \{ \}
+ prod? \notin \dom nombres \\
+ nombres = \{ \} \\
+ \{ prod? \mapsto nom? \} \neq \{ \} \\
+ telefonos \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \subset telefonos
 \end{schema}
 
-\begin{schema}{AsignarTurno\_ SP\_ 35}\\
-clientes : DNI \pfun NOMBRE \\
-turnos : DATETIME \pfun DNI \\
-dni? : DNI \\
-fecha? : DATETIME \\
-ahora? : DATETIME \\
-nombre? : NOMBRE
+\begin{schema}{InsertarVendedor\_ SP\_ 20}\\
+ direcciones : PROPID \pfun STRING \\
+ titulos : PROPID \pfun STRING \\
+ precios : PROPID \pfun \nat \\
+ estados : PROPID \pfun ESTADOPROPIEDAD \\
+ gestores : PROPID \pfun LEGAJO \\
+ nombres : LEGAJO \pfun STRING \\
+ telefonos : LEGAJO \pfun STRING \\
+ emails : LEGAJO \pfun STRING \\
+ nom? : STRING \\
+ tel? : STRING \\
+ em? : STRING \\
+ prod? : LEGAJO \\
+ propId? : LEGAJO 
 \where
-dni? \notin \dom clientes \\
-fecha? \notin \dom turnos \\
-fecha? > ahora? \\
-clientes \neq \{ \} \\
-\{ dni? \mapsto nombre? \} \neq \{ \} \\
-clientes \cap \{ dni? \mapsto nombre? \} = \{ \} \\
-turnos \neq \{ \} \\
-\{ fecha? \mapsto dni? \} = \{ \}\end{schema}
-
-\begin{schema}{AsignarTurno\_ SP\_ 33}\\
-clientes : DNI \pfun NOMBRE \\
-turnos : DATETIME \pfun DNI \\
-dni? : DNI \\
-fecha? : DATETIME \\
-ahora? : DATETIME \\
-nombre? : NOMBRE
-\where
-dni? \notin \dom clientes \\
-fecha? \notin \dom turnos \\
-fecha? > ahora? \\
-clientes \neq \{ \} \\
-\{ dni? \mapsto nombre? \} \neq \{ \} \\
-clientes \cap \{ dni? \mapsto nombre? \} = \{ \} \\
-turnos = \{ \} \\
-\{ fecha? \mapsto dni? \} = \{ \}
+ prod? \notin \dom nombres \\
+ nombres = \{ \} \\
+ \{ prod? \mapsto nom? \} \neq \{ \} \\
+ telefonos \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \neq \{ \} \\
+ telefonos \cap \{ prod? \mapsto tel? \} = \{ \}
 \end{schema}
 
-\begin{schema}{AsignarTurno\_ SP\_ 23}\\
-clientes : DNI \pfun NOMBRE \\
-turnos : DATETIME \pfun DNI \\
-dni? : DNI \\
-fecha? : DATETIME \\
-ahora? : DATETIME \\
-nombre? : NOMBRE
+\begin{schema}{InsertarVendedor\_ SP\_ 39}\\
+ direcciones : PROPID \pfun STRING \\
+ titulos : PROPID \pfun STRING \\
+ precios : PROPID \pfun \nat \\
+ estados : PROPID \pfun ESTADOPROPIEDAD \\
+ gestores : PROPID \pfun LEGAJO \\
+ nombres : LEGAJO \pfun STRING \\
+ telefonos : LEGAJO \pfun STRING \\
+ emails : LEGAJO \pfun STRING \\
+ nom? : STRING \\
+ tel? : STRING \\
+ em? : STRING \\
+ prod? : LEGAJO \\
+ propId? : LEGAJO 
 \where
-dni? \notin \dom clientes \\
-fecha? \notin \dom turnos \\
-fecha? > ahora? \\
-clientes = \{ \} \\
-\{ dni? \mapsto nombre? \} \neq \{ \} \\
-turnos \neq \{ \} \\
-\{ fecha? \mapsto dni? \} \neq \{ \} \\
-\{ fecha? \mapsto dni? \} = turnos
+ prod? \notin \dom nombres \\
+ nombres \neq \{ \} \\
+ \{ prod? \mapsto nom? \} \neq \{ \} \\
+ nombres \cap \{ prod? \mapsto nom? \} = \{ \} \\
+ telefonos \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \neq \{ \} \\
+ \{ prod? \mapsto tel? \} = telefonos
+\end{schema}
+
+\begin{schema}{InsertarVendedor\_ SP\_ 38}\\
+ direcciones : PROPID \pfun STRING \\
+ titulos : PROPID \pfun STRING \\
+ precios : PROPID \pfun \nat \\
+ estados : PROPID \pfun ESTADOPROPIEDAD \\
+ gestores : PROPID \pfun LEGAJO \\
+ nombres : LEGAJO \pfun STRING \\
+ telefonos : LEGAJO \pfun STRING \\
+ emails : LEGAJO \pfun STRING \\
+ nom? : STRING \\
+ tel? : STRING \\
+ em? : STRING \\
+ prod? : LEGAJO \\
+ propId? : LEGAJO 
+\where
+ prod? \notin \dom nombres \\
+ nombres \neq \{ \} \\
+ \{ prod? \mapsto nom? \} \neq \{ \} \\
+ nombres \cap \{ prod? \mapsto nom? \} = \{ \} \\
+ telefonos \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \subset telefonos
+\end{schema}
+
+\begin{schema}{InsertarVendedor\_ SP\_ 36}\\
+ direcciones : PROPID \pfun STRING \\
+ titulos : PROPID \pfun STRING \\
+ precios : PROPID \pfun \nat \\
+ estados : PROPID \pfun ESTADOPROPIEDAD \\
+ gestores : PROPID \pfun LEGAJO \\
+ nombres : LEGAJO \pfun STRING \\
+ telefonos : LEGAJO \pfun STRING \\
+ emails : LEGAJO \pfun STRING \\
+ nom? : STRING \\
+ tel? : STRING \\
+ em? : STRING \\
+ prod? : LEGAJO \\
+ propId? : LEGAJO 
+\where
+ prod? \notin \dom nombres \\
+ nombres \neq \{ \} \\
+ \{ prod? \mapsto nom? \} \neq \{ \} \\
+ nombres \cap \{ prod? \mapsto nom? \} = \{ \} \\
+ telefonos \neq \{ \} \\
+ \{ prod? \mapsto tel? \} \neq \{ \} \\
+ telefonos \cap \{ prod? \mapsto tel? \} = \{ \}
 \end{schema}
 
 \end{document}
